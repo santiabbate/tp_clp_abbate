@@ -14,7 +14,7 @@ entity dds_modulator is
 
         m_axis_modulation_tdata: out std_logic_vector(71 downto 0);
         m_axis_modulation_tvalid: out std_logic;
-        m_axis_modulation_tready: out std_logic;
+        m_axis_modulation_tready: in std_logic;
 
         config_reg_0: in std_logic_vector(31 downto 0);
         config_reg_1: in std_logic_vector(31 downto 0);
@@ -225,9 +225,18 @@ begin
     process(clk_i)
     begin
         if rising_edge(clk_i) then
-            period_counter_reg <= (others => '0') when resetn_i = '0' else
-                                  period_counter_reg + 1 when (modulator_en and period_counter_en) = '1' else
-                                  period_counter_reg;
+            if resetn_i = '0' then
+                period_counter_reg <= (others => '0');
+            elsif (modulator_en and period_counter_en) = '1' then
+                period_counter_reg <= period_counter_reg + 1;
+            else
+                period_counter_reg <= period_counter_reg;
+            end if;
+
+            -- Este tipo de sentencia VHDL (2008) no simula en Vivado
+            -- period_counter_reg <= (others => '0') when resetn_i = '0' else
+            --                       period_counter_reg + 1 when (modulator_en and period_counter_en) = '1' else
+            --                       period_counter_reg;
         end if;
     end process;
     
@@ -245,8 +254,15 @@ begin
     process(clk_i)
     begin
         if rising_edge(clk_i) then
-            modulation_counter_reg <= modulation_counter_start when resetn_i = '0' else
-                                      modulation_counter_next;
+            if resetn_i = '0' then
+                modulation_counter_reg <= modulation_counter_start;
+            else
+                modulation_counter_reg <= modulation_counter_next;
+            end if;
+            
+            -- Este tipo de sentencia VHDL (2008) no simula en Vivado
+            -- modulation_counter_reg <= modulation_counter_start when resetn_i = '0' else
+            --                           modulation_counter_next;
         end if;
     end process;
 
@@ -258,15 +274,22 @@ begin
     )
     begin
         modulation_counter_expired <= '0';
-        if modulator_en and modulation_counter_en then
+        if modulator_en = '1' and modulation_counter_en = '1' then
             if modulation_counter_reg >= modulation_counter_stop then
                 modulation_counter_next <= modulation_counter_start;
                 modulation_counter_expired <= '1';
             else
                 -- El contador se incrementa en 1 si estamos contando el ancho de subpulsos de modulación en fase,
                 -- y se incrementa en delta_pinc para modular en frecuencia el DDS con una rampa.
-                modulation_counter_next <= modulation_counter_reg + 1 when modulation_counter_counting_subpulse else
-                                           modulation_counter_reg + unsigned(delta_pinc);
+                if modulation_counter_counting_subpulse = '1' then
+                    modulation_counter_next <= modulation_counter_reg + 1;
+                else
+                    modulation_counter_next <= modulation_counter_reg + unsigned(delta_pinc);
+                end if ;
+
+                -- Este tipo de sentencia VHDL (2008) no simula en Vivado
+                -- modulation_counter_next <= modulation_counter_reg + 1 when modulation_counter_counting_subpulse else
+                --                            modulation_counter_reg + unsigned(delta_pinc);
             end if ; 
         else
             modulation_counter_next <= modulation_counter_start;     
@@ -280,10 +303,17 @@ begin
         if rising_edge(clk_i) then
             if resetn_i = '0' then
                 barker_subpulse_counter_reg <= (others => '0');
-            else if barker_subpulse_counter_en then
+            else if barker_subpulse_counter_en = '1' then
                     -- Incremento en 1, luego del tiempo de cada subpulso (Indicado por modulation_counter_expired)
-                    barker_subpulse_counter_reg <= (barker_subpulse_counter_reg + 1) when modulation_counter_expired
-                                                    else barker_subpulse_counter_reg;
+                    if modulation_counter_expired = '1' then
+                        barker_subpulse_counter_reg <= (barker_subpulse_counter_reg + 1);
+                    else
+                        barker_subpulse_counter_reg <= barker_subpulse_counter_reg;
+                    end if ;
+
+                    -- Este tipo de sentencia VHDL (2008) no simula en Vivado
+                    -- barker_subpulse_counter_reg <= (barker_subpulse_counter_reg + 1) when modulation_counter_expired
+                    --                                 else barker_subpulse_counter_reg;
                 else
                     barker_subpulse_counter_reg <= barker_subpulse_counter_reg;
                 end if;
@@ -291,7 +321,17 @@ begin
         end if;
     end process;
 
-    barker_phase <= (others => '0') when (barker_sequence(to_integer(unsigned(barker_subpulse_counter_reg))) = '1') else PHASE_OFFSET_180;
+    -- Selecciono la fase apropiada (0° o 180°) en función del bit correspondiente de la secuencia del código barker
+    barker_phase_proc : process( barker_sequence,barker_subpulse_counter_reg )
+    begin
+        if (barker_sequence(to_integer(unsigned(barker_subpulse_counter_reg))) = '1') then
+            barker_phase <= (others => '0');
+        else
+            barker_phase <= PHASE_OFFSET_180;
+        end if ;
+    end process ; -- barker_phase_proc
+    
+    -- barker_phase <= (others => '0') when (barker_sequence(to_integer(unsigned(barker_subpulse_counter_reg))) = '1') else PHASE_OFFSET_180;
     ----------------------------------------------------------------------------------------            
 
     -- Envío una señal de resync al terminar un ciclo del pulso (Hubo timeout_n)

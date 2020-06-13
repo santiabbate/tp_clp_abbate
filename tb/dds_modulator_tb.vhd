@@ -22,7 +22,7 @@ architecture dds_modulator_tb_arq of dds_modulator_tb is
 	
 			m_axis_modulation_tdata: out std_logic_vector(71 downto 0);
 			m_axis_modulation_tvalid: out std_logic;
-			m_axis_modulation_tready: out std_logic;
+			m_axis_modulation_tready: in std_logic;
 	
 			config_reg_0: in std_logic_vector(31 downto 0);
 			config_reg_1: in std_logic_vector(31 downto 0);
