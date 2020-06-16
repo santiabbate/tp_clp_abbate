@@ -80,10 +80,6 @@ architecture dds_modulator_tb_arq of dds_modulator_tb is
 	signal config_reg_3: std_logic_vector(31 downto 0) := (others => '0');
 	signal config_reg_4: std_logic_vector(31 downto 0) := (others => '0');
 	signal config_reg_5: std_logic_vector(31 downto 0) := (others => '0');
-
-	signal switches: std_logic_vector(3 downto 0);
-	signal leds: std_logic_vector(3 downto 0);
-	signal e_led: std_logic_vector(3 downto 0);
 	
 	----------------------------------------------------------
 	-- Funciones y procedimientos

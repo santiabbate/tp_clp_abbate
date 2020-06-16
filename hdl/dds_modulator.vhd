@@ -88,7 +88,6 @@ architecture dds_modulator_arq of dds_modulator is
     signal barker_subpulse_counter_en: std_logic;
     signal barker_phase: std_logic_vector(PINC_BITS-1 downto 0);
 
-
 begin
     
     -- Internal signals from config registers
@@ -111,7 +110,7 @@ begin
     barker_sequence <= config_reg_5(12 downto 0);
 
 
-    decode_state: process(state_bits, pinc, pinc_low, pinc_high, modulation_counter_reg, barker_subpulse_length, barker_phase, period, pulse_timeout_n)
+    decode_state: process(state_bits, pinc, pinc_low, pinc_high, modulation_counter_reg, barker_subpulse_length, barker_phase, period, pulse_timeout_n,tau)
     begin
         -- Valores por defecto
         modulation_counter_en <= '0';
@@ -286,7 +285,10 @@ begin
         modulator_en,
         modulation_counter_en,
         modulation_counter_reg,
-        modulation_counter_stop
+        modulation_counter_stop,
+        modulation_counter_start,
+        modulation_counter_counting_subpulse_length,
+        delta_pinc
     )
     begin
         modulation_counter_expired <= '0';
