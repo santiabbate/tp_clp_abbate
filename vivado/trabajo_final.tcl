@@ -299,10 +299,10 @@ set files [list \
 add_files -norecurse -fileset $obj $files
 
 # Import local files from the original project
-set files [list \
- [file normalize "${origin_dir}/dds_modulator_tb_behav.wcfg" ]\
-]
-set imported_files [import_files -fileset sim_1 $files]
+#set files [list \
+# [file normalize "${origin_dir}/dds_modulator_tb_behav.wcfg" ]\
+#]
+#set imported_files [import_files -fileset sim_1 $files]
 
 # Set 'sim_1' fileset file properties for remote files
 set file "$origin_dir/../tb/dds_compiler_dds_compiler_0_0.vhd"
@@ -331,7 +331,7 @@ set_property -name "used_in_synthesis" -value "1" -objects $file_obj
 
 
 # Set 'sim_1' fileset file properties for local files
-set file "vivado/dds_modulator_tb_behav.wcfg"
+#set file "vivado/dds_modulator_tb_behav.wcfg"
 set file_obj [get_files -of_objects [get_filesets sim_1] [list "*$file"]]
 set_property -name "is_enabled" -value "1" -objects $file_obj
 set_property -name "is_global_include" -value "0" -objects $file_obj
