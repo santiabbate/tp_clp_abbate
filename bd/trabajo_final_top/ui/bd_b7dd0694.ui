@@ -1,0 +1,32 @@
+{
+   "ActiveEmotionalView":"Default View",
+   "Default View_ScaleFactor":"0.993924",
+   "Default View_TopLeft":"-118,-55",
+   "ExpandedHierarchyInLayout":"",
+   "guistr":"# # String gsaved with Nlview 7.0.21  2019-05-29 bk=1.5064 VDI=41 GEI=36 GUI=JA:9.0 TLS
+#  -string -flagsOSRD
+preplace port resetn_i -pg 1 -lvl 0 -x 0 -y 100 -defaultsOSRD
+preplace port clk_i -pg 1 -lvl 0 -x 0 -y 60 -defaultsOSRD
+preplace portBus btn_i -pg 1 -lvl 0 -x 0 -y 210 -defaultsOSRD
+preplace inst ila_0 -pg 1 -lvl 3 -x 920 -y 90 -defaultsOSRD
+preplace inst xlconstant_6 -pg 1 -lvl 3 -x 920 -y 270 -defaultsOSRD
+preplace inst dds_modulator_0 -pg 1 -lvl 2 -x 560 -y 190 -defaultsOSRD
+preplace inst config_regs_0 -pg 1 -lvl 1 -x 170 -y 210 -defaultsOSRD
+preplace netloc dds_modulator_0_m_axis_modulation_tdata 1 2 1 790 70n
+preplace netloc dds_modulator_0_m_axis_modulation_tvalid 1 2 1 810 90n
+preplace netloc dds_modulator_0_dds_en_o 1 2 1 820 110n
+preplace netloc resetn_i_0_1 1 0 3 NJ 100 330J 60 800
+preplace netloc clk_i_1 1 0 3 NJ 60 320 50 NJ
+preplace netloc xlconstant_6_dout 1 2 2 NJ 210 1020
+preplace netloc config_regs_0_config_reg_0 1 1 1 N 160
+preplace netloc config_regs_0_config_reg_1 1 1 1 N 180
+preplace netloc config_regs_0_config_reg_2 1 1 1 N 200
+preplace netloc config_regs_0_config_reg_3 1 1 1 N 220
+preplace netloc config_regs_0_config_reg_4 1 1 1 N 240
+preplace netloc config_regs_0_config_reg_5 1 1 1 N 260
+preplace netloc btn_i_1 1 0 1 NJ 210
+levelinfo -pg 1 0 170 560 920 1040
+pagesize -pg 1 -db -bbox -sgen -120 -10 1040 330
+"
+}
+0

@@ -1,0 +1,327 @@
+{
+  "design": {
+    "design_info": {
+      "boundary_crc": "0xA9221938C7DD2FBB",
+      "device": "xc7z010clg400-1",
+      "name": "trabajo_final_top",
+      "synth_flow_mode": "None",
+      "tool_version": "2019.2",
+      "validated": "true"
+    },
+    "design_tree": {
+      "ila_0": "",
+      "xlconstant_6": "",
+      "dds_modulator_0": "",
+      "config_regs_0": ""
+    },
+    "ports": {
+      "resetn_i": {
+        "direction": "I"
+      },
+      "clk_i": {
+        "type": "clk",
+        "direction": "I",
+        "parameters": {
+          "CLK_DOMAIN": {
+            "value": "trabajo_final_top_clk_i",
+            "value_src": "default"
+          },
+          "FREQ_HZ": {
+            "value": "125000000"
+          },
+          "INSERT_VIP": {
+            "value": "0",
+            "value_src": "default"
+          },
+          "PHASE": {
+            "value": "0.000",
+            "value_src": "default"
+          }
+        }
+      },
+      "btn_i": {
+        "direction": "I",
+        "left": "3",
+        "right": "0"
+      }
+    },
+    "components": {
+      "ila_0": {
+        "vlnv": "xilinx.com:ip:ila:6.2",
+        "xci_name": "trabajo_final_top_ila_0_0",
+        "parameters": {
+          "C_DATA_DEPTH": {
+            "value": "16384"
+          },
+          "C_ENABLE_ILA_AXI_MON": {
+            "value": "false"
+          },
+          "C_MONITOR_TYPE": {
+            "value": "Native"
+          },
+          "C_NUM_OF_PROBES": {
+            "value": "4"
+          },
+          "C_PROBE0_WIDTH": {
+            "value": "72"
+          },
+          "C_SLOT_0_AXI_PROTOCOL": {
+            "value": "AXI4S"
+          }
+        }
+      },
+      "xlconstant_6": {
+        "vlnv": "xilinx.com:ip:xlconstant:1.1",
+        "xci_name": "trabajo_final_top_xlconstant_6_0"
+      },
+      "dds_modulator_0": {
+        "vlnv": "xilinx.com:module_ref:dds_modulator:1.0",
+        "xci_name": "trabajo_final_top_dds_modulator_0_0",
+        "reference_info": {
+          "ref_type": "hdl",
+          "ref_name": "dds_modulator",
+          "boundary_crc": "0x0"
+        },
+        "interface_ports": {
+          "m_axis_modulation": {
+            "mode": "Master",
+            "vlnv": "xilinx.com:interface:axis_rtl:1.0",
+            "parameters": {
+              "TDATA_NUM_BYTES": {
+                "value": "9",
+                "value_src": "constant"
+              },
+              "TDEST_WIDTH": {
+                "value": "0",
+                "value_src": "constant"
+              },
+              "TID_WIDTH": {
+                "value": "0",
+                "value_src": "constant"
+              },
+              "TUSER_WIDTH": {
+                "value": "0",
+                "value_src": "constant"
+              },
+              "HAS_TREADY": {
+                "value": "1",
+                "value_src": "constant"
+              },
+              "HAS_TSTRB": {
+                "value": "0",
+                "value_src": "constant"
+              },
+              "HAS_TKEEP": {
+                "value": "0",
+                "value_src": "constant"
+              },
+              "HAS_TLAST": {
+                "value": "0",
+                "value_src": "constant"
+              }
+            },
+            "port_maps": {
+              "TDATA": {
+                "physical_name": "m_axis_modulation_tdata",
+                "direction": "O",
+                "left": "71",
+                "right": "0"
+              },
+              "TVALID": {
+                "physical_name": "m_axis_modulation_tvalid",
+                "direction": "O"
+              },
+              "TREADY": {
+                "physical_name": "m_axis_modulation_tready",
+                "direction": "I"
+              }
+            }
+          }
+        },
+        "ports": {
+          "clk_i": {
+            "direction": "I",
+            "parameters": {
+              "CLK_DOMAIN": {
+                "value": "trabajo_final_top_clk_i",
+                "value_src": "default_prop"
+              },
+              "FREQ_HZ": {
+                "value": "125000000",
+                "value_src": "user_prop"
+              },
+              "PHASE": {
+                "value": "0.000",
+                "value_src": "default_prop"
+              }
+            }
+          },
+          "resetn_i": {
+            "direction": "I"
+          },
+          "dds_en_o": {
+            "direction": "O"
+          },
+          "config_reg_0": {
+            "direction": "I",
+            "left": "31",
+            "right": "0"
+          },
+          "config_reg_1": {
+            "direction": "I",
+            "left": "31",
+            "right": "0"
+          },
+          "config_reg_2": {
+            "direction": "I",
+            "left": "31",
+            "right": "0"
+          },
+          "config_reg_3": {
+            "direction": "I",
+            "left": "31",
+            "right": "0"
+          },
+          "config_reg_4": {
+            "direction": "I",
+            "left": "31",
+            "right": "0"
+          },
+          "config_reg_5": {
+            "direction": "I",
+            "left": "31",
+            "right": "0"
+          }
+        }
+      },
+      "config_regs_0": {
+        "vlnv": "xilinx.com:module_ref:config_regs:1.0",
+        "xci_name": "trabajo_final_top_config_regs_0_0",
+        "reference_info": {
+          "ref_type": "hdl",
+          "ref_name": "config_regs",
+          "boundary_crc": "0x0"
+        },
+        "ports": {
+          "btn_i": {
+            "direction": "I",
+            "left": "3",
+            "right": "0"
+          },
+          "config_reg_0": {
+            "direction": "O",
+            "left": "31",
+            "right": "0"
+          },
+          "config_reg_1": {
+            "direction": "O",
+            "left": "31",
+            "right": "0"
+          },
+          "config_reg_2": {
+            "direction": "O",
+            "left": "31",
+            "right": "0"
+          },
+          "config_reg_3": {
+            "direction": "O",
+            "left": "31",
+            "right": "0"
+          },
+          "config_reg_4": {
+            "direction": "O",
+            "left": "31",
+            "right": "0"
+          },
+          "config_reg_5": {
+            "direction": "O",
+            "left": "31",
+            "right": "0"
+          }
+        }
+      }
+    },
+    "nets": {
+      "dds_modulator_0_m_axis_modulation_tdata": {
+        "ports": [
+          "dds_modulator_0/m_axis_modulation_tdata",
+          "ila_0/probe0"
+        ]
+      },
+      "dds_modulator_0_m_axis_modulation_tvalid": {
+        "ports": [
+          "dds_modulator_0/m_axis_modulation_tvalid",
+          "ila_0/probe1"
+        ]
+      },
+      "dds_modulator_0_dds_en_o": {
+        "ports": [
+          "dds_modulator_0/dds_en_o",
+          "ila_0/probe2"
+        ]
+      },
+      "resetn_i_0_1": {
+        "ports": [
+          "resetn_i",
+          "ila_0/probe3",
+          "dds_modulator_0/resetn_i"
+        ]
+      },
+      "clk_i_1": {
+        "ports": [
+          "clk_i",
+          "ila_0/clk",
+          "dds_modulator_0/clk_i"
+        ]
+      },
+      "xlconstant_6_dout": {
+        "ports": [
+          "xlconstant_6/dout",
+          "dds_modulator_0/m_axis_modulation_tready"
+        ]
+      },
+      "config_regs_0_config_reg_0": {
+        "ports": [
+          "config_regs_0/config_reg_0",
+          "dds_modulator_0/config_reg_0"
+        ]
+      },
+      "config_regs_0_config_reg_1": {
+        "ports": [
+          "config_regs_0/config_reg_1",
+          "dds_modulator_0/config_reg_1"
+        ]
+      },
+      "config_regs_0_config_reg_2": {
+        "ports": [
+          "config_regs_0/config_reg_2",
+          "dds_modulator_0/config_reg_2"
+        ]
+      },
+      "config_regs_0_config_reg_3": {
+        "ports": [
+          "config_regs_0/config_reg_3",
+          "dds_modulator_0/config_reg_3"
+        ]
+      },
+      "config_regs_0_config_reg_4": {
+        "ports": [
+          "config_regs_0/config_reg_4",
+          "dds_modulator_0/config_reg_4"
+        ]
+      },
+      "config_regs_0_config_reg_5": {
+        "ports": [
+          "config_regs_0/config_reg_5",
+          "dds_modulator_0/config_reg_5"
+        ]
+      },
+      "btn_i_1": {
+        "ports": [
+          "btn_i",
+          "config_regs_0/btn_i"
+        ]
+      }
+    }
+  }
+}

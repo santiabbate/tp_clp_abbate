@@ -1,4 +1,7 @@
-vivado/
+vivado/*
+!vivado/trabajo_final.tcl
+
 *.code-workspace
-sim/
 *.bak
+*.svg
+*.docx
