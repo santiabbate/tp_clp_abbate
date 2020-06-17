@@ -12,10 +12,11 @@ entity dds_modulator is
         resetn_i: in std_logic;
         dds_en_o: out std_logic;
 
+        -- Bus AXI-Stream
         m_axis_modulation_tdata: out std_logic_vector(71 downto 0);
         m_axis_modulation_tvalid: out std_logic;
         m_axis_modulation_tready: in std_logic;
-
+        -- Entrada desde registros de configuración
         config_reg_0: in std_logic_vector(31 downto 0);
         config_reg_1: in std_logic_vector(31 downto 0);
         config_reg_2: in std_logic_vector(31 downto 0);
@@ -27,43 +28,43 @@ end;
 
 architecture dds_modulator_arq of dds_modulator is
     
-    -- Config register 0 signals
+    -- Señales desde registro 0
     signal modulator_en: std_logic; -- Enable global
 
-    -- Config register 1 signals
+    -- Señales desde registro 1
     signal mode: std_logic;                                 -- Modo Continuo o Pulsado
     signal modulation_type: std_logic;                      -- Modulación en frecuencia o en fase
     signal state_bits: std_logic_vector(S_BITS-1 downto 0); -- Bits de estado de entrada (Combinación de modo, enable de modulación y tipo de modulación)
 
-    -- Config register 2 signals
+    -- Señales desde registro 1
     signal period: unsigned(PERIOD_COUNTER_BITS-1 downto 0);-- Período para el modo pulsado
     signal tau: unsigned(PERIOD_COUNTER_BITS-1 downto 0);   -- Ancho de pulso para el modo pulsado
 
-    -- Config register 3 signals
+    -- Señales desde registro 2
     signal pinc: std_logic_vector(PINC_BITS-1 downto 0);    -- Incremento de fase (Seteo de frecuencia de salida, en modo continuo o modulado en fase)
     signal pinc_low: unsigned(PINC_BITS-1 downto 0);        -- Fase inicial (Frecuencia de salida inicial) en modo modulado en frecuencia
 
-    -- Config register 4 signals
+    -- Señales desde registro 3
     signal barker_subpulse_length: unsigned(PINC_BITS-1 downto 0); -- Ancho de cada subpulso del código barker, en modulación en fase
     signal pinc_high: unsigned(PINC_BITS-1 downto 0);              -- Fase final (Frecuencia de salida final) en modo modulado en frecuencia
     
-    -- Config register 5 signals
+    -- Señales desde registro 4
     signal delta_pinc: std_logic_vector(PINC_BITS-1 downto 0);  -- Pendiente de la modulación lineal en frecuencia         
 
     signal barker_seq_num: unsigned(3 downto 0);                -- Valor numérico de secuencia barker cargada (2,3,4,5,7,11,13)
     signal barker_sequence: std_logic_vector(12 downto 0);      -- Secuencia barker a generar en modulación en fase
 
-    -- Output signal constructs
+    -- Para construcción de señales del bus de salida
     signal tdata_pinc: std_logic_vector(PINC_BITS-1 downto 0);
     signal tdata_pinc_o: std_logic_vector(PINC_BITS-1 downto 0);
     signal tdata_offset: std_logic_vector(PINC_BITS-1 downto 0);
     signal tvalid: std_logic;
     
-    -- Period counter signals for pulsed mode
+    -- period_counter, para modo pulsado
     --    ____                   ____   
     -- __|    |_________________|    |__
     --        ^                 ^       
-    --     midcount            stop     
+    --     midcount(tau)       stop(period)
 
     signal period_counter_reg: unsigned(PERIOD_COUNTER_BITS-1 downto 0);
     signal period_counter_stop, pulse_length: unsigned(PERIOD_COUNTER_BITS-1 downto 0);
@@ -72,25 +73,23 @@ architecture dds_modulator_arq of dds_modulator is
 
     signal resync: std_logic;
 
-    -- Modulation counter signals for frequency modulated mode
-    -- and phase modulation mode (counts length of barker
-    -- code subpulses)
+    -- modulation_counter, para modulación lineal de frecuencia
+    -- y longitud de subpulsos barker en modulación en fase
 
     signal modulation_counter_reg, modulation_counter_next, modulation_counter_start, modulation_counter_stop: unsigned(PINC_BITS-1 downto 0);
     signal modulation_counter_en: std_logic;
     signal modulation_counter_counting_subpulse_length: std_logic;     -- Am I counting subpulse length? flag
- 
     signal modulation_counter_expired: std_logic;
 
-    -- Barker subpulse counter for phase modulated mode
-    
+    -- barker_subpulse_counter, para modulación en fase
+
     signal barker_subpulse_counter_reg, barker_subpulse_counter_next: unsigned(3 downto 0);
     signal barker_subpulse_counter_en: std_logic;
     signal barker_phase: std_logic_vector(PINC_BITS-1 downto 0);
 
 begin
     
-    -- Internal signals from config registers
+    -- Señales internas, tomadas de las entradas de los registros de configuración
     modulator_en <= config_reg_0(ENABLE_BIT);
     
     mode <= config_reg_1(MODE_BIT);
@@ -109,7 +108,9 @@ begin
     barker_seq_num <= unsigned(config_reg_5(31 downto 28));
     barker_sequence <= config_reg_5(12 downto 0);
 
-
+    ---------------------------------------------------------------------------------------
+    -- Decodificación del estado. Uno de los 6 modos posibles de operación
+    ---------------------------------------------------------------------------------------
     decode_state: process(state_bits, pinc, pinc_low, pinc_high, modulation_counter_reg, barker_subpulse_length, barker_phase, period, pulse_timeout_n,tau)
     begin
         -- Valores por defecto
@@ -121,20 +122,20 @@ begin
         period_counter_en <= '0';
         period_counter_stop <= (others => '0');
         pulse_length <= (others => '0');
-
         tdata_offset <= (others => '0');
         tdata_pinc <= (others => '0');
-        
         tvalid <= '0';
 
         case  state_bits is
             -- Modo continuo sin modulación
             when "001" | "101" =>
+                -- Sólo frecuencia constante
                 tdata_pinc <= pinc;
                 tvalid <= '1';
 
             -- Modo continuo modulado en frecuencia
             when "111" =>
+                -- modulation_counter genera una rampa de PINC
                 modulation_counter_en  <= '1';
                 modulation_counter_start <= pinc_low;
                 modulation_counter_stop <= pinc_high;
@@ -144,13 +145,16 @@ begin
 
             -- Modo continuo modulado en fase
             when "011" =>
+                -- modulation_counter cuenta la longitud de los subpulsos barker
                 modulation_counter_en <= '1';
                 modulation_counter_start <= (others => '0');
                 modulation_counter_stop <= barker_subpulse_length;
                 modulation_counter_counting_subpulse_length <= '1';
                 
+                -- barker_subpulse_counter cuenta la posición de los bits de la secuencia barker
                 barker_subpulse_counter_en <= '1';
-
+                
+                -- Este tipo de sentencia VHDL (2008) no simula en Vivado
                 -- tdata_offset <= (others => '0') when (barker_sequence(to_integer(unsigned(barker_subpulse_counter_reg))) = '1') else PHASE_OFFSET_180;
                 tdata_offset <= barker_phase;
                 tdata_pinc <= pinc;
@@ -158,19 +162,22 @@ begin
 
             -- Modo pulsado sin modulación
             when "000" | "100" =>
+                -- period_counter cuenta el ancho de pulso y período
                 period_counter_en <= '1';
                 period_counter_stop <= period;
                 pulse_length <= tau;
 
-                tdata_pinc <= pinc;
+                tdata_pinc <= pinc; -- Sóo frecuencia constante
                 tvalid <= '1';
 
             -- Modo pulsado modulado en frecuencia    
             when "110" =>
+                -- period_counter cuenta el ancho de pulso y período
                 period_counter_en <= '1';
                 period_counter_stop <= period;
                 pulse_length <= tau;
                 
+                -- modulation_counter genera una rampa de PINC
                 modulation_counter_en <= pulse_timeout_n;
                 modulation_counter_start <= pinc_low;
                 modulation_counter_stop <= pinc_high;
@@ -180,17 +187,21 @@ begin
 
             -- Modo pulsado modulado en fase
             when "010" =>
+                -- modulation_counter cuenta la longitud de los subpulsos barker
                 modulation_counter_en <= pulse_timeout_n;
                 modulation_counter_start <= (others => '0');
                 modulation_counter_stop <= barker_subpulse_length;
                 modulation_counter_counting_subpulse_length <= '1';
                 
+                -- barker_subpulse_counter cuenta la posición de los bits de la secuencia barker
                 barker_subpulse_counter_en <= pulse_timeout_n;
 
+                -- period_counter cuenta el ancho de pulso y período
                 period_counter_en <= '1';
                 period_counter_stop <= period;
                 pulse_length <= tau;
                 
+                -- Este tipo de sentencia VHDL (2008) no simula en Vivado
                 -- tdata_offset <= (others => '0') when (barker_sequence(to_integer(unsigned(barker_subpulse_counter_reg))) = '1') else PHASE_OFFSET_180;
                 tdata_offset <= barker_phase;
                 tdata_pinc <= pinc;
@@ -216,7 +227,8 @@ begin
 
 
     ----------------------------------------------------------------------------------------
-    -- Contador para el período de los pulsos
+    -- Contador para el período de los pulsos, period_counter
+    ----------------------------------------------------------------------------------------
     process(clk_i)
     begin
         if rising_edge(clk_i) then
@@ -259,13 +271,15 @@ begin
             end if;
         end if ;
     end process;
-
+    
+    -- Este tipo de sentencia VHDL (2008) no simula en Vivado
     -- pulse_timeout_n <= '1' when (mode = MODE_CONTINUOUS) else
     --                    '1' when (period_counter_reg < unsigned(pulse_length)) else
     --                    '0';
 
     ----------------------------------------------------------------------------------------                   
-    -- Contador para la modulación en frecuencia y el ancho de los subpulsos de modulación en fase
+    -- Contador para la modulación en frecuencia y el ancho de los subpulsos de modulación en fase, modulation_counter
+    ----------------------------------------------------------------------------------------
     process(clk_i)
     begin
         if rising_edge(clk_i) then
@@ -315,8 +329,9 @@ begin
     end process;
 
     ----------------------------------------------------------------------------------------
-    -- Contador de subpulsos Barker
-    -- Me indica qué pulso de la secuencia es el actual para aplicar el cambio de fase
+    -- Contador de subpulsos Barker, barker_subpulse_counter
+    -- Me indica qué subpulso de la secuencia es el actual para aplicar el cambio de fase
+    ----------------------------------------------------------------------------------------
     process( clk_i )
     begin
         if rising_edge(clk_i) then
@@ -353,8 +368,11 @@ begin
 
     -- Este tipo de sentencia VHDL (2008) no simula en Vivado
     -- barker_phase <= (others => '0') when (barker_sequence(to_integer(unsigned(barker_subpulse_counter_reg))) = '1') else PHASE_OFFSET_180;
+    
     ----------------------------------------------------------------------------------------            
-
+    -- Señales de salida
+    ----------------------------------------------------------------------------------------
+    
     -- Envío una señal de resync al terminar un ciclo del pulso (Hubo timeout_n)
     -- Esto es válido en el modo pulsado
     resync <= (not pulse_timeout_n) and modulator_en;

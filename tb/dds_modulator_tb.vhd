@@ -15,6 +15,7 @@ architecture dds_modulator_tb_arq of dds_modulator_tb is
 	-- Constantes
 	constant CLOCK_PERIOD: time := 8 ns;
 	constant T_INITIAL_RESET: time := 20 * CLOCK_PERIOD;
+	constant T_BETWEEN_TESTS: time := 20 us;
 
 	constant CONT_NO_MOD:     std_logic_vector(2 downto 0) := "001";    
 	constant CONT_MOD_FREC:   std_logic_vector(2 downto 0) := "111";
@@ -64,7 +65,6 @@ architecture dds_modulator_tb_arq of dds_modulator_tb is
 	signal m_axis_data_tready : STD_LOGIC;
 	signal m_axis_data_tdata :  STD_LOGIC_VECTOR(31 DOWNTO 0);
 
-
 	-- Declaracion de las senales de prueba
 	signal clk_i: std_logic := '1';
 	signal resetn_i: std_logic := '0';
@@ -96,7 +96,6 @@ architecture dds_modulator_tb_arq of dds_modulator_tb is
 							   out_0: out std_logic_vector(31 downto 0)) is
 		variable aux: integer;
 	begin
-		-- out_0 := (fout_MHz*(2**30))/125 ;
 		aux := (fout_MHz*(2**PINC_BITS))/FCLK_MHZ;
 		out_0 := std_logic_vector(to_unsigned(aux,32));
 	end procedure;
@@ -158,7 +157,7 @@ architecture dds_modulator_tb_arq of dds_modulator_tb is
 		barker_sequence(12 downto 0) := barker_code;
 	end procedure;
 	
-	-- Setear el período y anchu de pulso para modo pulsado
+	-- Setear el período y ancho de pulso para modo pulsado
 	procedure modulator_set_period(pulse_us: in integer;
 								   period_us: in integer;
 								   out_2: out std_logic_vector(31 downto 0)) is
@@ -218,26 +217,6 @@ begin
 			wait for CLOCK_PERIOD/2;
 		end loop;
 	end process clock_gen;
-
-	-----------------------------------------------------------------------
-  	-- Reset
-  	-----------------------------------------------------------------------
-
-	-- Disable the clock for 20 clock cycles starting in cycle 100.
-	-- Keep the clock enable tied high for the rest of the test.
-	-- resetn_gen : process
-	-- begin
-	-- 	resetn_i <= '0';
-	-- 	-- Drive clock enable T_HOLD time after rising edge of clock
-	-- 	wait until rising_edge(clk_i);
-	-- 	wait for T_INITIAL_RESET;
-	-- 	resetn_i <= '1';
-	-- 	wait;
-	-- end process resetn_gen;
-
-	-----------------------------------------------------------------------
-  	-- Axi-Stream tready
-  	-----------------------------------------------------------------------
 	
 	-----------------------------------------------------------------------
   	-- Secuencia del test
@@ -255,9 +234,8 @@ begin
 	variable seqwidth: integer;
 
 	begin
-			-- wait until rising_edge(resetn_i); -- Espero a salir de reset
 			resetn_i <= '0';
-			wait until rising_edge(clk_i); -- Espero a salir de reset
+			wait until rising_edge(clk_i);
 			wait for T_INITIAL_RESET;
 			resetn_i <= '1';
 			---------------------------------
@@ -272,7 +250,7 @@ begin
 			modulator_enable('1', proc_out_0);
 			config_reg_0 <= proc_out_0;
 			wait for 20 us;
-			-- Cambio de frecuencia (10 MHz)
+			-- Cambio de frecuencia (20 MHz)
 			modulator_set_cont_frec(10, proc_out_0);
 			config_reg_3 <= proc_out_0;
 			wait for 20 us;
@@ -283,14 +261,15 @@ begin
 			-- END TEST: Frecuencia continua
 			---------------------------------
 			resetn_i <= '0';
-			wait for 10 us;
+			wait for T_BETWEEN_TESTS;
 			resetn_i <= '1';
 			-------------------------------------------------
 			-- TEST: 2) Modo continuo modulado en frecuencia
 			-------------------------------------------------
 			-- Configuro el modo
 			config_reg_1(2 downto 0) <= CONT_MOD_FREC;
-			modulator_set_frec_mod(0, 3, 50, proc_out_3, proc_out_4, proc_out_5);
+			-- Frecuencia inicial 0MHz, final 2MHz, longitud 50us
+			modulator_set_frec_mod(0, 2, 50, proc_out_3, proc_out_4, proc_out_5);
 			config_reg_3 <= proc_out_3;
 			config_reg_4 <= proc_out_4;
 			config_reg_5 <= proc_out_5;
@@ -312,7 +291,8 @@ begin
 			----------------------------------------------
 			-- Configuro el modo
 			config_reg_1(2 downto 0) <= CONT_MOD_PHASE;
-			modulator_set_phase_mod(13, 2, 1, proc_out_3, proc_out_4, proc_out_5);
+			-- Secuencia barker N° 5, 2us de duración c/subpulso, 1MHz de frecuencia
+			modulator_set_phase_mod(5, 2, 1, proc_out_3, proc_out_4, proc_out_5);
 			config_reg_3 <= proc_out_3;
 			config_reg_4 <= proc_out_4;
 			config_reg_5 <= proc_out_5;
@@ -334,7 +314,7 @@ begin
 			----------------------------------------------
 			-- Configuro el modo
 			config_reg_1(2 downto 0) <= PULS_NO_MOD;
-			-- Ancho de pulso de 50 us, período de 200 us
+			-- Ancho de pulso de 5 us, período de 15 us
 			modulator_set_period(5,15, proc_out_2);
 			config_reg_2 <= proc_out_2;
 			modulator_set_cont_frec(1, proc_out_3);
@@ -357,11 +337,11 @@ begin
 			-------------------------------------------------
 			-- Configuro el modo
 			config_reg_1(2 downto 0) <= PULS_MOD_FREC;
-			-- Ancho de pulso de 5us, período de 20us
+			-- Ancho de pulso de 5us, período de 15us
 			pulse_width := 5;
 			modulator_set_period(pulse_width, 15, proc_out_2);
 			config_reg_2 <= proc_out_2;
-			-- Barrido en frecuencia de 0 a 20 MHz, en el ancho de pulso configurado
+			-- Barrido en frecuencia de 0 a 5 MHz, en el ancho de pulso configurado
 			modulator_set_frec_mod(0, 5, pulse_width, proc_out_3, proc_out_4, proc_out_5);
 			config_reg_3 <= proc_out_3;
 			config_reg_4 <= proc_out_4;
@@ -385,11 +365,11 @@ begin
 			-- Configuro el modo
 			config_reg_1(2 downto 0) <= PULS_MOD_PHASE;
 			-- Parámetros de la modulación
-			barkerseq := 5;
-			seqwidth := 2;
+			barkerseq := 13; -- Secuencia N° 13
+			seqwidth := 2;   -- Longitud de c/subpulso 2us
 			modulator_set_period(barkerseq * seqwidth, barkerseq * seqwidth + 20, proc_out_2);
 			config_reg_2 <= proc_out_2;
-			-- Código Barker: 13, Ancho de c/subpulso: 5us, Frecuencia: 3MHz
+			--Frecuencia: 1MHz
 			modulator_set_phase_mod(barkerseq, seqwidth, 1, proc_out_3, proc_out_4, proc_out_5);
 			config_reg_3 <= proc_out_3;
 			config_reg_4 <= proc_out_4;
